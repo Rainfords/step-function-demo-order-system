@@ -13,9 +13,10 @@ Current Status: Fully functional Spring Boot application with Step Functions int
 
 ## Tech Stack
 
-- **Framework**: Spring Boot 3.2.3
-- **Language**: Kotlin 1.9.23
-- **Build Tool**: Gradle 8.5
+- **Framework**: Spring Boot 4.0.3
+- **Language**: Kotlin 2.2.21
+- **JVM**: Java 21
+- **Build Tool**: Gradle 9.3.1
 - **AWS SDK**: AWS SDK v2 (Step Functions, STS)
 - **Local Development**: LocalStack (Step Functions emulation)
 - **Testing**: JUnit 5, Mockk, TestContainers
@@ -24,8 +25,8 @@ Current Status: Fully functional Spring Boot application with Step Functions int
 ## Quick Start
 
 ### Prerequisites
-- Java 17+
-- Gradle 8.5+ (wrapper included)
+- Java 21
+- Gradle 9.3.1+ (wrapper included)
 - Docker (for LocalStack)
 
 ### 1. Start LocalStack
@@ -82,7 +83,7 @@ src/
 
 docker-compose.yml                   # LocalStack setup
 localstack/
-  init-aws.sh                        # LocalStack initialization
+  init-localstack.sh                # LocalStack initialization
 stepfunctions/
   order-workflow.json                # State machine definition
 ```
@@ -179,7 +180,7 @@ cat gradle/wrapper/gradle-wrapper.properties
 - **Thread Safety**: OrderRepository uses ConcurrentHashMap for thread-safe operations
 - **Error Handling**: Services return result objects with success/error status
 - **Mocking**: PaymentService has 10% failure rate to demonstrate error handling
-- **LocalStack Initialization**: State machine and activities are created via init-aws.sh on container start
+- **LocalStack Initialization**: State machine and activities are created via init-localstack.sh on container start
 
 ## File Locations
 
@@ -192,4 +193,4 @@ cat gradle/wrapper/gradle-wrapper.properties
 - **Tests**: `src/test/kotlin/com/example/order/`
 - **AWS Config**: `src/main/resources/application-local.yml`
 - **Step Functions State Machine**: `stepfunctions/order-workflow.json`
-- **LocalStack Setup**: `docker-compose.yml`, `localstack/init-aws.sh`
+- **LocalStack Setup**: `docker-compose.yml`, `localstack/init-localstack.sh`
