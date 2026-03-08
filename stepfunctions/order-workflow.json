@@ -1,0 +1,95 @@
+{
+  "Comment": "Order Processing Workflow with Activity Tasks",
+  "StartAt": "ValidateOrder",
+  "States": {
+    "ValidateOrder": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:us-east-1:000000000000:activity:ValidateOrderActivity",
+      "ResultPath": "$.validationResult",
+      "Next": "ReserveInventory",
+      "Retry": [
+        {
+          "ErrorEquals": ["States.TaskFailed"],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 2,
+          "BackoffRate": 2.0
+        }
+      ],
+      "Catch": [
+        {
+          "ErrorEquals": ["States.ALL"],
+          "ResultPath": "$.error",
+          "Next": "OrderFailed"
+        }
+      ]
+    },
+    "ReserveInventory": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:us-east-1:000000000000:activity:ReserveInventoryActivity",
+      "ResultPath": "$.inventoryResult",
+      "Next": "ProcessPayment",
+      "Retry": [
+        {
+          "ErrorEquals": ["States.TaskFailed"],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 2,
+          "BackoffRate": 2.0
+        }
+      ],
+      "Catch": [
+        {
+          "ErrorEquals": ["States.ALL"],
+          "ResultPath": "$.error",
+          "Next": "ReleaseInventory"
+        }
+      ]
+    },
+    "ProcessPayment": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:us-east-1:000000000000:activity:ProcessPaymentActivity",
+      "ResultPath": "$.paymentResult",
+      "Next": "FulfillOrder",
+      "Retry": [
+        {
+          "ErrorEquals": ["States.TaskFailed"],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 2,
+          "BackoffRate": 2.0
+        }
+      ],
+      "Catch": [
+        {
+          "ErrorEquals": ["States.ALL"],
+          "ResultPath": "$.error",
+          "Next": "ReleaseInventory"
+        }
+      ]
+    },
+    "FulfillOrder": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:us-east-1:000000000000:activity:FulfillOrderActivity",
+      "ResultPath": "$.fulfillmentResult",
+      "Next": "OrderComplete"
+    },
+    "ReleaseInventory": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:us-east-1:000000000000:activity:ReleaseInventoryActivity",
+      "ResultPath": "$.releaseResult",
+      "Next": "OrderFailed",
+      "Catch": [
+        {
+          "ErrorEquals": ["States.ALL"],
+          "Next": "OrderFailed"
+        }
+      ]
+    },
+    "OrderComplete": {
+      "Type": "Succeed"
+    },
+    "OrderFailed": {
+      "Type": "Fail",
+      "Error": "OrderProcessingError",
+      "Cause": "Order processing failed at one or more steps"
+    }
+  }
+}

@@ -1,0 +1,26 @@
+services:
+  localstack:
+    image: localstack/localstack-pro:latest
+    ports:
+      - "4566:4566"
+      - "4571:4571"
+    env_file:
+      - .env
+    environment:
+      - SERVICES=stepfunctions,sts,iam,events
+      - DEBUG=0
+      - DOCKER_HOST=unix:///var/run/docker.sock
+      - AWS_DEFAULT_REGION=us-east-1
+      - AWS_ACCESS_KEY_ID=test
+      - AWS_SECRET_ACCESS_KEY=test
+      - LOCALSTACK_AUTH_TOKEN=${LOCALSTACK_AUTH_TOKEN}
+    volumes:
+      - "./stepfunctions/order-workflow.json:/tmp/order-workflow.json"
+      - "./localstack/init-localstack.sh:/etc/localstack/init/ready.d/init-localstack.sh"
+      - "/var/run/docker.sock:/var/run/docker.sock"
+    networks:
+      - order-network
+
+networks:
+  order-network:
+    driver: bridge

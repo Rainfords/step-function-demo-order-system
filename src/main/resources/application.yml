@@ -1,0 +1,13 @@
+spring:
+  application:
+    name: order-processing-service
+  profiles:
+    active: local
+
+server:
+  port: 8080
+
+logging:
+  level:
+    com.example.order: DEBUG
+    software.amazon.awssdk: INFO

@@ -1,0 +1,10 @@
+aws:
+  endpoint: http://localhost:4566
+  region: us-east-1
+  stepfunctions:
+    state-machine-arn: arn:aws:states:us-east-1:000000000000:stateMachine:OrderProcessingWorkflow
+    activities:
+      validate: arn:aws:states:us-east-1:000000000000:activity:ValidateOrderActivity
+      inventory: arn:aws:states:us-east-1:000000000000:activity:ReserveInventoryActivity
+      payment: arn:aws:states:us-east-1:000000000000:activity:ProcessPaymentActivity
+      fulfillment: arn:aws:states:us-east-1:000000000000:activity:FulfillOrderActivity
