@@ -1,3 +1,7 @@
+app:
+  simulation:
+    activity-delay-ms: 3000  # 3 seconds per step for demo visualization
+
 aws:
   endpoint: http://localhost:4566
   region: us-east-1

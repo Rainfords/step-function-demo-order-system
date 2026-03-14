@@ -64,7 +64,7 @@ This approach:
 ### 1. Clone and Navigate to Project
 
 ```bash
-cd ai-step-function-demo
+cd step-function-demo-order-system
 ```
 
 ### 2. Start LocalStack

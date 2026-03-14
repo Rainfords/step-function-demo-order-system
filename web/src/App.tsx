@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { OrderForm } from './components/OrderForm';
 import { OrderList } from './components/OrderList';
 import { OrderDetail } from './components/OrderDetail';

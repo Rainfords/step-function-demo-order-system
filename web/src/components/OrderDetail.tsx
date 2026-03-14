@@ -32,7 +32,7 @@ export const OrderDetail: React.FC<OrderDetailProps> = ({ orderId, onCancel }) =
 
     if (!autoRefresh) return;
 
-    const interval = setInterval(fetchOrder, 2000);
+    const interval = setInterval(fetchOrder, 3500);
     return () => clearInterval(interval);
   }, [orderId, autoRefresh]);
 

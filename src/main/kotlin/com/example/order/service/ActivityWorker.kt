@@ -2,6 +2,7 @@ package com.example.order.service
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import org.slf4j.LoggerFactory
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.scheduling.annotation.Async
 import org.springframework.scheduling.annotation.EnableAsync
 import org.springframework.scheduling.annotation.Scheduled
@@ -11,8 +12,10 @@ import software.amazon.awssdk.services.sfn.model.GetActivityTaskRequest
 import software.amazon.awssdk.services.sfn.model.SendTaskFailureRequest
 import software.amazon.awssdk.services.sfn.model.SendTaskSuccessRequest
 import com.example.order.model.Order
+import com.example.order.model.OrderStatus
 import com.example.order.model.workflow.WorkflowInput
 import com.example.order.config.AwsProperties
+import com.example.order.repository.OrderRepository
 
 @EnableAsync
 @Service
@@ -23,7 +26,9 @@ class ActivityWorker(
     private val inventoryService: InventoryService,
     private val paymentService: PaymentService,
     private val fulfillmentService: FulfillmentService,
-    private val objectMapper: ObjectMapper
+    private val objectMapper: ObjectMapper,
+    private val orderRepository: OrderRepository,
+    @Value("\${app.simulation.activity-delay-ms:0}") private val activityDelayMs: Long
 ) {
     private val logger = LoggerFactory.getLogger(this::class.java)
 
@@ -40,7 +45,8 @@ class ActivityWorker(
     fun validateOrderWorker() {
         pollAndExecute(
             activityArn = awsProperties.validateActivityArn,
-            activityName = "ValidateOrder"
+            activityName = "ValidateOrder",
+            activeStatus = OrderStatus.VALIDATING
         ) { input ->
             val order = Order(
                 orderId = input.orderId,
@@ -58,7 +64,8 @@ class ActivityWorker(
     fun reserveInventoryWorker() {
         pollAndExecute(
             activityArn = awsProperties.inventoryActivityArn,
-            activityName = "ReserveInventory"
+            activityName = "ReserveInventory",
+            activeStatus = OrderStatus.RESERVED
         ) { input ->
             val order = Order(
                 orderId = input.orderId,
@@ -76,7 +83,8 @@ class ActivityWorker(
     fun processPaymentWorker() {
         pollAndExecute(
             activityArn = awsProperties.paymentActivityArn,
-            activityName = "ProcessPayment"
+            activityName = "ProcessPayment",
+            activeStatus = OrderStatus.PAID
         ) { input ->
             val order = Order(
                 orderId = input.orderId,
@@ -94,7 +102,8 @@ class ActivityWorker(
     fun fulfillOrderWorker() {
         pollAndExecute(
             activityArn = awsProperties.fulfillmentActivityArn,
-            activityName = "FulfillOrder"
+            activityName = "FulfillOrder",
+            activeStatus = OrderStatus.FULFILLED
         ) { input ->
             val order = Order(
                 orderId = input.orderId,
@@ -110,6 +119,7 @@ class ActivityWorker(
     private fun pollAndExecute(
         activityArn: String,
         activityName: String,
+        activeStatus: OrderStatus? = null,
         executor: (WorkflowInput) -> String
     ) {
         try {
@@ -133,11 +143,26 @@ class ActivityWorker(
             val input = objectMapper.readValue(response.input(), WorkflowInput::class.java)
             val taskToken = response.taskToken()
 
+            // Update order status immediately when task is received
+            if (activeStatus != null) {
+                val order = orderRepository.findById(input.orderId)
+                if (order != null) {
+                    order.status = activeStatus
+                    orderRepository.update(order)
+                    logger.info("Updated order ${input.orderId} status to $activeStatus")
+                }
+            }
+
             try {
                 logger.info("Executing $activityName for order ${input.orderId}")
                 val output = executor(input)
                 logger.info("$activityName completed for order ${input.orderId}")
                 logger.info("Task output: $output")
+
+                if (activityDelayMs > 0) {
+                    logger.info("Applying simulated delay of ${activityDelayMs}ms for $activityName")
+                    Thread.sleep(activityDelayMs)
+                }
 
                 sfnClient.sendTaskSuccess(
                     SendTaskSuccessRequest.builder()
