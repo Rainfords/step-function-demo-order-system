@@ -67,4 +67,7 @@ class AwsProperties {
 
     @Value("\${aws.stepfunctions.activities.fulfillment:arn:aws:states:us-east-1:000000000000:activity:FulfillOrderActivity}")
     lateinit var fulfillmentActivityArn: String
+
+    @Value("\${aws.stepfunctions.activities.release:arn:aws:states:us-east-1:000000000000:activity:ReleaseInventoryActivity}")
+    lateinit var releaseActivityArn: String
 }

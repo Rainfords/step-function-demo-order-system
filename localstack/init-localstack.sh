@@ -13,7 +13,7 @@ awslocal iam create-role \
 
 # Create activities
 echo "Creating activities..."
-for activity in ValidateOrderActivity ReserveInventoryActivity ProcessPaymentActivity FulfillOrderActivity; do
+for activity in ValidateOrderActivity ReserveInventoryActivity ProcessPaymentActivity FulfillOrderActivity ReleaseInventoryActivity; do
   awslocal stepfunctions create-activity \
     --name "$activity" \
     --region us-east-1 \

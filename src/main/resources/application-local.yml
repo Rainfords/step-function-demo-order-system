@@ -1,6 +1,6 @@
 app:
   simulation:
-    activity-delay-ms: 3000  # 3 seconds per step for demo visualization
+    activity-delay-ms: 1000  # 3 seconds per step for demo visualization
 
 aws:
   endpoint: http://localhost:4566
@@ -12,3 +12,4 @@ aws:
       inventory: arn:aws:states:us-east-1:000000000000:activity:ReserveInventoryActivity
       payment: arn:aws:states:us-east-1:000000000000:activity:ProcessPaymentActivity
       fulfillment: arn:aws:states:us-east-1:000000000000:activity:FulfillOrderActivity
+      release: arn:aws:states:us-east-1:000000000000:activity:ReleaseInventoryActivity

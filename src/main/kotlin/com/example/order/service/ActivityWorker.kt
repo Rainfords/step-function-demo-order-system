@@ -44,6 +44,7 @@ class ActivityWorker(
         logger.info("  Inventory: ${awsProperties.inventoryActivityArn}")
         logger.info("  Payment: ${awsProperties.paymentActivityArn}")
         logger.info("  Fulfillment: ${awsProperties.fulfillmentActivityArn}")
+        logger.info("  Release: ${awsProperties.releaseActivityArn}")
     }
 
     @Scheduled(fixedDelay = 2000, initialDelay = 2000)
@@ -99,6 +100,9 @@ class ActivityWorker(
                 paymentMethod = input.paymentMethod
             )
             val result = paymentService.processPayment(order)
+            if (!result.success) {
+                throw RuntimeException(result.error ?: "Payment declined")
+            }
             objectMapper.writeValueAsString(result)
         }
     }
@@ -119,6 +123,20 @@ class ActivityWorker(
             )
             val result = fulfillmentService.fulfillOrder(order)
             objectMapper.writeValueAsString(result)
+        }
+    }
+
+    @Scheduled(fixedDelay = 2000, initialDelay = 2000)
+    @Async
+    fun releaseInventoryWorker() {
+        pollAndExecute(
+            activityArn = awsProperties.releaseActivityArn,
+            activityName = "ReleaseInventory",
+            activeStatus = OrderStatus.FAILED
+        ) { input ->
+            val released = inventoryService.releaseReservation(input.orderId)
+            logger.info("Released inventory for order ${input.orderId}: $released")
+            objectMapper.writeValueAsString(mapOf("released" to released, "orderId" to input.orderId))
         }
     }
 

@@ -18,6 +18,14 @@ class PaymentService {
         // Calculate total amount
         val totalAmount = order.items.sumOf { it.price * it.quantity }
 
+        // Deterministic decline for test card
+        if (order.paymentMethod.last4 == "1234") {
+            return PaymentResult(
+                success = false,
+                error = "Payment declined: card ending in 1234 is blocked"
+            )
+        }
+
         // Simulate occasional payment failures (10% failure rate for demo)
         if (Random.nextInt(100) < 10) {
             return PaymentResult(
