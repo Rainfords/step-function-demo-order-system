@@ -26,6 +26,7 @@ export interface Order {
   paymentMethod: PaymentMethod;
   status: OrderStatus;
   executionArn: string | null;
+  failureReason?: string;
   createdAt: string;
   updatedAt: string;
 }

@@ -49,14 +49,6 @@
       "Resource": "arn:aws:states:us-east-1:000000000000:activity:ProcessPaymentActivity",
       "ResultPath": "$.paymentResult",
       "Next": "FulfillOrder",
-      "Retry": [
-        {
-          "ErrorEquals": ["States.TaskFailed"],
-          "IntervalSeconds": 2,
-          "MaxAttempts": 2,
-          "BackoffRate": 2.0
-        }
-      ],
       "Catch": [
         {
           "ErrorEquals": ["States.ALL"],

@@ -28,7 +28,7 @@ export const OrderList: React.FC<OrderListProps> = ({ selectedOrderId, onSelectO
     };
 
     fetchOrders();
-    const interval = setInterval(fetchOrders, 3000);
+    const interval = setInterval(fetchOrders, 5000);
     return () => clearInterval(interval);
   }, [refreshTrigger]);
 
@@ -89,6 +89,11 @@ export const OrderList: React.FC<OrderListProps> = ({ selectedOrderId, onSelectO
                   <strong>Created:</strong> {new Date(order.createdAt).toLocaleTimeString()}
                 </div>
               </div>
+              {order.status === 'FAILED' && order.failureReason && (
+                <div className="order-failure-reason">
+                  {order.failureReason}
+                </div>
+              )}
             </div>
           ))}
         </div>

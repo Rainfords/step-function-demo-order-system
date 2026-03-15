@@ -10,6 +10,7 @@ data class Order(
     val paymentMethod: PaymentMethod,
     var status: OrderStatus = OrderStatus.PENDING,
     var executionArn: String? = null,
+    var failureReason: String? = null,
     val createdAt: LocalDateTime = LocalDateTime.now(),
     var updatedAt: LocalDateTime = LocalDateTime.now()
 )

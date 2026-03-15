@@ -16,6 +16,8 @@ data class OrderResponse(
     val status: OrderStatus,
     @JsonProperty("executionArn")
     val executionArn: String?,
+    @JsonProperty("failureReason")
+    val failureReason: String?,
     @JsonProperty("createdAt")
     val createdAt: LocalDateTime,
     @JsonProperty("updatedAt")
@@ -29,6 +31,7 @@ fun Order.toResponse() = OrderResponse(
     paymentMethod = paymentMethod,
     status = status,
     executionArn = executionArn,
+    failureReason = failureReason,
     createdAt = createdAt,
     updatedAt = updatedAt
 )

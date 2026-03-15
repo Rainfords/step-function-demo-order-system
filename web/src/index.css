@@ -314,6 +314,15 @@ header p {
   font-size: 0.9em;
 }
 
+.order-failure-reason {
+  margin-top: 8px;
+  padding: 6px 10px;
+  background: #ffcdd2;
+  color: #b71c1c;
+  border-radius: 4px;
+  font-size: 0.85em;
+}
+
 .order-detail-view {
   background: white;
   border-radius: 8px;

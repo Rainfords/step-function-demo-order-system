@@ -101,6 +101,11 @@ class ActivityWorker(
             )
             val result = paymentService.processPayment(order)
             if (!result.success) {
+                val existingOrder = orderRepository.findById(input.orderId)
+                if (existingOrder != null) {
+                    existingOrder.failureReason = result.error
+                    orderRepository.update(existingOrder)
+                }
                 throw RuntimeException(result.error ?: "Payment declined")
             }
             objectMapper.writeValueAsString(result)
