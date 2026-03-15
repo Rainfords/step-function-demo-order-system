@@ -14,7 +14,7 @@ export const OrderDetail: React.FC<OrderDetailProps> = ({ orderId, onCancel }) =
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Load initial order data
+  // Load initial order data and periodically sync execution status
   useEffect(() => {
     const fetchOrder = async () => {
       try {
@@ -30,6 +30,11 @@ export const OrderDetail: React.FC<OrderDetailProps> = ({ orderId, onCancel }) =
     };
 
     fetchOrder();
+
+    // Poll periodically to sync execution status with Step Functions
+    // This ensures we catch the COMPLETED status when the execution finishes
+    const interval = setInterval(fetchOrder, 10000);
+    return () => clearInterval(interval);
   }, [orderId]);
 
   // Handle real-time status updates via WebSocket

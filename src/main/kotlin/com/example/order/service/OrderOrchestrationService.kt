@@ -3,10 +3,12 @@ package com.example.order.service
 import com.example.order.config.AwsProperties
 import com.example.order.model.Order
 import com.example.order.model.OrderStatus
+import com.example.order.model.OrderStatusUpdate
 import com.example.order.model.workflow.WorkflowInput
 import com.example.order.repository.OrderRepository
 import com.fasterxml.jackson.databind.ObjectMapper
 import org.slf4j.LoggerFactory
+import org.springframework.messaging.simp.SimpMessagingTemplate
 import org.springframework.stereotype.Service
 import software.amazon.awssdk.services.sfn.SfnClient
 import software.amazon.awssdk.services.sfn.model.DescribeExecutionRequest
@@ -19,7 +21,8 @@ class OrderOrchestrationService(
     private val sfnClient: SfnClient,
     private val awsProperties: AwsProperties,
     private val orderRepository: OrderRepository,
-    private val objectMapper: ObjectMapper
+    private val objectMapper: ObjectMapper,
+    private val messagingTemplate: SimpMessagingTemplate
 ) {
     private val logger = LoggerFactory.getLogger(this::class.java)
 
@@ -94,6 +97,27 @@ class OrderOrchestrationService(
             ExecutionStatus.TIMED_OUT -> OrderStatus.FAILED
             ExecutionStatus.ABORTED -> OrderStatus.CANCELLED
             else -> OrderStatus.PENDING
+        }
+    }
+
+    fun syncAndPublishOrderStatus(order: Order) {
+        if (order.executionArn == null) return
+
+        try {
+            val executionStatus = getExecutionStatus(order.executionArn!!)
+            val newStatus = mapExecutionStatusToOrderStatus(executionStatus)
+
+            if (newStatus != order.status && newStatus == OrderStatus.COMPLETED) {
+                order.status = newStatus
+                orderRepository.update(order)
+
+                // Publish completion status via WebSocket
+                val statusUpdate = OrderStatusUpdate(order.orderId, newStatus)
+                messagingTemplate.convertAndSend("/topic/orders/${order.orderId}/status", statusUpdate)
+                logger.info("Published COMPLETED status for order ${order.orderId} via WebSocket")
+            }
+        } catch (e: Exception) {
+            logger.warn("Failed to sync execution status for order ${order.orderId}", e)
         }
     }
 }

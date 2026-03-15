@@ -56,15 +56,8 @@ class OrderController(
         val order = orderRepository.findById(orderId)
             ?: return ResponseEntity.notFound().build()
 
-        // Update status from Step Functions if execution ARN exists
-        if (order.executionArn != null) {
-            val executionStatus = orchestrationService.getExecutionStatus(order.executionArn!!)
-            val newStatus = orchestrationService.mapExecutionStatusToOrderStatus(executionStatus)
-            if (newStatus != order.status) {
-                order.status = newStatus
-                orderRepository.update(order)
-            }
-        }
+        // Sync status from Step Functions and publish updates via WebSocket
+        orchestrationService.syncAndPublishOrderStatus(order)
 
         return ResponseEntity.ok(order.toResponse())
     }
