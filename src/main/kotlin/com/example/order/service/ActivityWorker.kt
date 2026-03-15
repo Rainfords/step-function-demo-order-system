@@ -3,6 +3,7 @@ package com.example.order.service
 import com.fasterxml.jackson.databind.ObjectMapper
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
+import org.springframework.messaging.simp.SimpMessagingTemplate
 import org.springframework.scheduling.annotation.Async
 import org.springframework.scheduling.annotation.EnableAsync
 import org.springframework.scheduling.annotation.Scheduled
@@ -13,6 +14,7 @@ import software.amazon.awssdk.services.sfn.model.SendTaskFailureRequest
 import software.amazon.awssdk.services.sfn.model.SendTaskSuccessRequest
 import com.example.order.model.Order
 import com.example.order.model.OrderStatus
+import com.example.order.model.OrderStatusUpdate
 import com.example.order.model.workflow.WorkflowInput
 import com.example.order.config.AwsProperties
 import com.example.order.repository.OrderRepository
@@ -28,6 +30,7 @@ class ActivityWorker(
     private val fulfillmentService: FulfillmentService,
     private val objectMapper: ObjectMapper,
     private val orderRepository: OrderRepository,
+    private val messagingTemplate: SimpMessagingTemplate,
     @Value("\${app.simulation.activity-delay-ms:0}") private val activityDelayMs: Long
 ) {
     private val logger = LoggerFactory.getLogger(this::class.java)
@@ -150,6 +153,10 @@ class ActivityWorker(
                     order.status = activeStatus
                     orderRepository.update(order)
                     logger.info("Updated order ${input.orderId} status to $activeStatus")
+
+                    // Publish status update via WebSocket
+                    val statusUpdate = OrderStatusUpdate(input.orderId, activeStatus)
+                    messagingTemplate.convertAndSend("/topic/orders/${input.orderId}/status", statusUpdate)
                 }
             }
 

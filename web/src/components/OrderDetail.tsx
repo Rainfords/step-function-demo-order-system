@@ -1,7 +1,8 @@
-import React, { useEffect, useState } from 'react';
-import { Order } from '../types';
+import React, { useEffect, useState, useCallback } from 'react';
+import { Order, OrderStatus } from '../types';
 import { WorkflowVisualization } from './WorkflowVisualization';
 import { api } from '../api';
+import { useOrderWebSocket } from '../hooks/useOrderWebSocket';
 
 interface OrderDetailProps {
   orderId: string;
@@ -12,8 +13,8 @@ export const OrderDetail: React.FC<OrderDetailProps> = ({ orderId, onCancel }) =
   const [order, setOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [autoRefresh, setAutoRefresh] = useState(true);
 
+  // Load initial order data
   useEffect(() => {
     const fetchOrder = async () => {
       try {
@@ -29,12 +30,18 @@ export const OrderDetail: React.FC<OrderDetailProps> = ({ orderId, onCancel }) =
     };
 
     fetchOrder();
+  }, [orderId]);
 
-    if (!autoRefresh) return;
+  // Handle real-time status updates via WebSocket
+  const handleStatusUpdate = useCallback((status: OrderStatus) => {
+    setOrder(prev => {
+      if (!prev) return prev;
+      return { ...prev, status, updatedAt: new Date().toISOString() };
+    });
+  }, []);
 
-    const interval = setInterval(fetchOrder, 3500);
-    return () => clearInterval(interval);
-  }, [orderId, autoRefresh]);
+  // Subscribe to WebSocket updates
+  useOrderWebSocket(orderId, handleStatusUpdate);
 
   if (loading) {
     return (
@@ -75,22 +82,14 @@ export const OrderDetail: React.FC<OrderDetailProps> = ({ orderId, onCancel }) =
       <div className="detail-section">
         <h4>Workflow Progress</h4>
         <WorkflowVisualization status={order.status} />
-        {!isCompleted && !isFailed && (
+        {!isCompleted && !isFailed && onCancel && (
           <div style={{ marginTop: '15px', display: 'flex', gap: '10px' }}>
             <button
-              className="btn btn-secondary btn-small"
-              onClick={() => setAutoRefresh(!autoRefresh)}
+              className="btn btn-danger btn-small"
+              onClick={onCancel}
             >
-              {autoRefresh ? '⏸ Pause' : '▶ Resume'} Auto-refresh
+              Cancel Order
             </button>
-            {onCancel && (
-              <button
-                className="btn btn-danger btn-small"
-                onClick={onCancel}
-              >
-                Cancel Order
-              </button>
-            )}
           </div>
         )}
       </div>

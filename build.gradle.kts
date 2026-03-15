@@ -22,6 +22,7 @@ repositories {
 dependencies {
     // Spring Boot
     implementation("org.springframework.boot:spring-boot-starter-web")
+    implementation("org.springframework.boot:spring-boot-starter-websocket")
     implementation("org.springframework.boot:spring-boot-starter-logging")
 
     // Kotlin
@@ -33,6 +34,7 @@ dependencies {
     // AWS SDK v2
     implementation("software.amazon.awssdk:sfn:2.24.0")
     implementation("software.amazon.awssdk:sts:2.24.0")
+    implementation("software.amazon.awssdk:apache-client:2.24.0")
 
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("org.springframework.boot:spring-boot-starter-webmvc-test")
