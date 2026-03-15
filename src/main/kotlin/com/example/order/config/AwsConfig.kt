@@ -25,9 +25,10 @@ class AwsConfigLocal(
     fun sfnClient(): SfnClient {
         val credentials = AwsBasicCredentials.create("test", "test")
         val httpClient = ApacheHttpClient.builder()
-            .maxConnections(150)
-            .connectionTimeout(Duration.ofSeconds(30))
-            .socketTimeout(Duration.ofSeconds(120))
+            .maxConnections(300)
+            .connectionTimeout(Duration.ofSeconds(10))
+            .socketTimeout(Duration.ofSeconds(90))
+            .connectionMaxIdleTime(Duration.ofSeconds(30))
             .build()
         return SfnClient.builder()
             .endpointOverride(URI.create(endpoint))
