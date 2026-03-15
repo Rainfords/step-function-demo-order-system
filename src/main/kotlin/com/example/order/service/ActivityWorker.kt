@@ -35,6 +35,9 @@ class ActivityWorker(
 ) {
     private val logger = LoggerFactory.getLogger(this::class.java)
 
+    // Track idle time for each activity to implement exponential backoff
+    private val activityIdleTime = mutableMapOf<String, Long>()
+
     init {
         logger.info("ActivityWorker initialized with ARNs:")
         logger.info("  Validate: ${awsProperties.validateActivityArn}")
@@ -43,7 +46,7 @@ class ActivityWorker(
         logger.info("  Fulfillment: ${awsProperties.fulfillmentActivityArn}")
     }
 
-    @Scheduled(fixedDelay = 1000, initialDelay = 2000)
+    @Scheduled(fixedDelay = 2000, initialDelay = 2000)
     @Async
     fun validateOrderWorker() {
         pollAndExecute(
@@ -62,7 +65,7 @@ class ActivityWorker(
         }
     }
 
-    @Scheduled(fixedDelay = 1000, initialDelay = 2000)
+    @Scheduled(fixedDelay = 2000, initialDelay = 2000)
     @Async
     fun reserveInventoryWorker() {
         pollAndExecute(
@@ -81,7 +84,7 @@ class ActivityWorker(
         }
     }
 
-    @Scheduled(fixedDelay = 1000, initialDelay = 2000)
+    @Scheduled(fixedDelay = 2000, initialDelay = 2000)
     @Async
     fun processPaymentWorker() {
         pollAndExecute(
@@ -100,7 +103,7 @@ class ActivityWorker(
         }
     }
 
-    @Scheduled(fixedDelay = 1000, initialDelay = 2000)
+    @Scheduled(fixedDelay = 2000, initialDelay = 2000)
     @Async
     fun fulfillOrderWorker() {
         pollAndExecute(
@@ -119,6 +122,14 @@ class ActivityWorker(
         }
     }
 
+    private fun shouldSkipPoll(activityName: String): Boolean {
+        val lastIdleTime = activityIdleTime[activityName] ?: return false
+        val timeSinceLastIdle = System.currentTimeMillis() - lastIdleTime
+        // Exponential backoff: skip polls for increasing duration (max 30 seconds)
+        val backoffMs = minOf((Math.pow(2.0, (timeSinceLastIdle / 5000).toDouble()) * 1000).toLong(), 30000L)
+        return timeSinceLastIdle < backoffMs
+    }
+
     private fun pollAndExecute(
         activityArn: String,
         activityName: String,
@@ -126,6 +137,12 @@ class ActivityWorker(
         executor: (WorkflowInput) -> String
     ) {
         try {
+            // Skip polling if we've been idle (exponential backoff)
+            if (shouldSkipPoll(activityName)) {
+                logger.trace("Skipping poll for $activityName (backoff)")
+                return
+            }
+
             val request = GetActivityTaskRequest.builder()
                 .activityArn(activityArn)
                 .workerName("order-service-$activityName")
@@ -134,11 +151,15 @@ class ActivityWorker(
             // logger.debug("Polling for $activityName tasks on ARN: $activityArn")
             val response = sfnClient.getActivityTask(request)
 
-            // No task available
+            // No task available - mark as idle
             if (response.taskToken() == null) {
                 logger.trace("No task available for $activityName")
+                activityIdleTime[activityName] = System.currentTimeMillis()
                 return
             }
+
+            // Task found - reset idle time
+            activityIdleTime.remove(activityName)
 
             logger.info("Received $activityName task: ${response.taskToken()}")
             logger.info("Task input: ${response.input()}")
